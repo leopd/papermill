@@ -95,6 +95,8 @@ class NotebookExecutionManager(object):
         self.log_output = log_output
         self.start_time = None
         self.end_time = None
+        self.save_period = 5 # seconds
+        self.last_save_time = self.now()  # Inaccurate, but simplifies testing logic
         self.pbar = None
         if progress_bar:
             # lazy import due to implict slow ipython import
@@ -132,6 +134,16 @@ class NotebookExecutionManager(object):
         """
         if self.output_path:
             write_ipynb(self.nb, self.output_path)
+        self.last_save_time = self.now()
+
+    @catch_nb_assignment
+    def save_periodically(self):
+        """Saves the notebook if it's been more than self.last_save_time seconds
+        since it was last saved.
+        """
+        elapsed = (self.now() - self.last_save_time).total_seconds()
+        if elapsed >= self.save_period:
+            self.save()
 
     @catch_nb_assignment
     def notebook_start(self, **kwargs):
